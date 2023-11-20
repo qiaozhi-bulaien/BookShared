@@ -1,0 +1,35 @@
+name: Create Release and Update version.txt
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get release info
+        id: get_info
+        run: |
+          echo "::set-output name=title::$(echo ${GITHUB_REF#refs/tags/})"
+          echo "::set-output name=body::$(echo ${{ github.event.release.body }})"
+          echo "::set-output name=apk_url::$(echo ${{ github.event.release.assets[0].browser_download_url }})"
+
+      - name: Create version.txt
+        run: |
+          echo '{' > version.txt
+          echo '  "title": "${{ steps.get_info.outputs.title }}",' >> version.txt
+          echo '  "body": "${{ steps.get_info.outputs.body }}",' >> version.txt
+          echo '  "apk_url": "${{ steps.get_info.outputs.apk_url }}",' >> version.txt
+          echo '}' >> version.txt
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.txt
+          git commit -m "Update version.txt" && git push
