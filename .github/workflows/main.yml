@@ -1,36 +1,34 @@
-name: Create Release and Update version.txt
+name: Get Latest Release Info
 
 on:
- push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 jobs:
-  build:
+  get_info:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get release info
-        id: get_info
+      - name: Get latest release info
         run: |
-          echo "::set-output name=title::$(echo ${GITHUB_REF#refs/tags/})"
-          echo "::set-output name=body::$(echo ${{ github.event.release.body }})"
-          echo "::set-output name=apk_url::$(echo ${{ github.event.release.assets[0].browser_download_url }})"
+          RELEASE_INFO=$(curl --header "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ github.repository }}/releases/latest)
+          TITLE=$(echo $RELEASE_INFO | jq -r .name)
+          BODY=$(echo $RELEASE_INFO | jq -r .body)
+          APK_URL=$(echo $RELEASE_INFO | jq -r '.assets[] | select(.name | endswith(".apk")) | .browser_download_url')
+          echo "TITLE=$TITLE" >> $GITHUB_ENV
+          echo "BODY=$BODY" >> $GITHUB_ENV
+          echo "APK_URL=$APK_URL" >> $GITHUB_ENV
 
-      - name: Create version.txt
+      - name: Save info to file
         run: |
-          echo '{' > version.txt
-          echo '  "title": "${{ steps.get_info.outputs.title }}",' >> version.txt
-          echo '  "body": "${{ steps.get_info.outputs.body }}",' >> version.txt
-          echo '  "apk_url": "${{ steps.get_info.outputs.apk_url }}",' >> version.txt
-          echo '}' >> version.txt
+          echo "{\"title\": \"$TITLE\", \"body\": \"$BODY\", \"apk_url\": \"$APK_URL\"}" > version.txt
 
       - name: Commit and push
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add version.txt
-          git commit -m "Update version.txt" && git push
+          git commit -m "Update version.txt with latest release info"
+          git push
