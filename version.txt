@@ -1,0 +1,1 @@
+{"title": "v1.0.2", "body": "测试Release，无需在意", "apk_url": "https://github.com/BookShared/BookShared/releases/download/v1.0.2/SB-v1.0.1-armAll.apk"}
