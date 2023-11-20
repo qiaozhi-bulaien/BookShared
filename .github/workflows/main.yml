@@ -19,9 +19,9 @@ jobs:
           TITLE=$(echo $RELEASE_INFO | jq -r .name)
           BODY=$(echo $RELEASE_INFO | jq -r .body)
           APK_URL=$(echo $RELEASE_INFO | jq -r '.assets[] | select(.name | endswith(".apk")) | .browser_download_url')
-          echo "TITLE=$TITLE" >> $GITHUB_ENV
-          echo "BODY=$BODY" >> $GITHUB_ENV
-          echo "APK_URL=$APK_URL" >> $GITHUB_ENV
+          printf "TITLE=%s\n" "$TITLE" >> $GITHUB_ENV
+          printf "BODY=%s\n" "$BODY" >> $GITHUB_ENV
+          printf "APK_URL=%s\n" "$APK_URL" >> $GITHUB_ENV
 
       - name: Save info to file
         run: |
