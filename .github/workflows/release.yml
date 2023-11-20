@@ -28,6 +28,16 @@ jobs:
         run: |
           echo "{\"title\": \"$TITLE\", \"body\": \"$BODY\", \"apk_url\": \"$APK_URL\"}" > version.txt
 
+      - name: Get SHA for version.txt
+        id: get-sha
+        run: |
+          FILE_SHA=$(curl \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/contents/version.txt \
+             | jq -r '.sha')
+            echo "::set-output name=sha::$FILE_SHA"
+
       - name: Commit and push
         uses: actions/github-script@v3
         with:
@@ -36,10 +46,11 @@ jobs:
             const fs = require('fs');
             const content = fs.readFileSync('version.txt', 'utf8');
             await github.repos.createOrUpdateFileContents({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              path: 'version.txt',
-              message: 'Update version.txt with latest release info',
-              content: Buffer.from(content).toString('base64'),
-              branch: 'main'
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            path: 'version.txt',
+             message: 'Update version.txt with latest release info',
+            content: Buffer.from(content).toString('base64'),
+            sha: ${{ steps.get-sha.outputs.sha }},  # Add this line
+            branch: 'main'
             });
